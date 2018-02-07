@@ -4,3 +4,6 @@
 * build a prototype
 * prepare a presentation
 * drink beer
+
+max:
+* ws to wait for TX
