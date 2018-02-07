@@ -1,5 +1,5 @@
 <template>
-  <div id="app">
+  <div id="post">
     <form>
       <md-input-container>
         <label>Price</label>
@@ -47,7 +47,7 @@ import api from './api'
 import moment from 'moment'
 
 export default {
-  name: 'app',
+  name: 'Post',
   data () {
     return {
       currentTrip: {
@@ -63,10 +63,10 @@ export default {
   computed: {
     dataToSend () {
       return {
-        price: this.currentTrip.price,
-        date: this.parseDate(this.currentTrip.date),
-        capacity: this.currentTrip.capacity,
-        travel_time: this.currentTrip.travel_time,
+        price: parseInt(this.currentTrip.price),
+        date: parseInt(this.parseDate(this.currentTrip.date)),
+        capacity: parseInt(this.currentTrip.capacity),
+        travel_time: parseInt(this.currentTrip.travel_time),
         from: this.currentTrip.from,
         to: this.currentTrip.to
       }
@@ -136,4 +136,7 @@ export default {
 </script>
 
 <style>
+#post {
+  padding: 15px;
+}
 </style>

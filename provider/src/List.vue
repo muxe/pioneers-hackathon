@@ -93,4 +93,7 @@ export default {
 </script>
 
 <style>
+#list {
+  padding: 15px;
+}
 </style>
