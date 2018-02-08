@@ -1,10 +1,16 @@
 <template>
   <div id="list">
     <md-button @click="getList()">Refresh List</md-button>
+    <div>
+      <md-radio v-model="filter.type" id="radioTypeAll" name="radioType" md-value="all">All</md-radio>
+      <md-radio v-model="filter.type" id="radioTypeOffer" name="radioType" md-value="offer">Offers</md-radio>
+      <md-radio v-model="filter.type" id="radioTypeDemand" name="radioType" md-value="demand">Demands</md-radio>
+    </div>
     <md-table @sort="onSort">
       <md-table-header>
         <md-table-row>
           <md-table-head md-sort-by="type">Type</md-table-head>
+          <md-table-head>Matched</md-table-head>
           <md-table-head md-sort-by="from">From</md-table-head>
           <md-table-head md-sort-by="to">To</md-table-head>
           <md-table-head md-sort-by="date">Date</md-table-head>
@@ -15,8 +21,9 @@
         </md-table-row>
       </md-table-header>
       <md-table-body>
-        <md-table-row v-for="item in items" :key="item.signature">
+        <md-table-row v-for="item in displayItems" :key="item.signature" :class="{ highlight: item.isHighlighted }">
           <md-table-cell>{{item.data.type}}</md-table-cell>
+          <md-table-cell><md-button @click="highlightMatches(item)">{{item.matches.length > 0 ? item.matches.length : 'no'}}</md-button></md-table-cell>
           <md-table-cell>{{item.data.from}}</md-table-cell>
           <md-table-cell>{{item.data.to}}</md-table-cell>
           <md-table-cell>{{item.data.date | humanDate}}</md-table-cell>
@@ -39,7 +46,15 @@ export default {
   name: 'list',
   data () {
     return {
-      items: []
+      filter: {
+        type: 'all'
+      },
+      sort: {
+        name: 'date',
+        type: 'asc'
+      },
+      items: [],
+      matchedItems: []
     }
   },
   filters: {
@@ -52,15 +67,72 @@ export default {
       return moment(input * 1000).format('DD.MM.YYYY HH:mm')
     }
   },
+  computed: {
+    displayItems () {
+      // filter the list
+      let filtered = this.items.filter((item) => {
+        if (!item.data.type) {
+          return false
+        }
+        if (this.filter.type === 'all') {
+          return true
+        }
+        return item.data.type === this.filter.type
+      })
+      // sort the list
+      filtered.sort((a, b) => {
+        if (a.data[this.sort.name] < b.data[this.sort.name]) {
+          return this.sort.type === 'asc' ? -1 : 1
+        }
+        if (a.data[this.sort.name] > b.data[this.sort.name]) {
+          return this.sort.type === 'asc' ? 1 : -1
+        }
+
+        return 0
+      })
+
+      filtered.forEach(item => {
+        item.matches = this.findMatches(item)
+      })
+
+      filtered.forEach(item => {
+        item.isHighlighted = false
+        this.matchedItems.forEach(matchItem => {
+          item.isHighlighted = (matchItem.data.offer_hash === item.hash || matchItem.data.demand_hash === item.hash)? true : false
+        })
+      })
+
+      return filtered
+    },
+    matchItems () {
+      return this.items.filter((item) => {
+        return !item.data.type && item.data.to_acc
+      })
+    }
+  },
   methods: {
+    highlightMatches (item) {
+      this.matchedItems = item.matches
+    },
+    findMatches (item) {
+      if (item.data.type === 'offer') {
+        return this.matchItems.filter((matchItem) => {
+          return matchItem.data.offer_hash === item.hash
+        })
+      } else if (item.data.type === 'demand') {
+        return this.matchItems.filter((matchItem) => {
+          return matchItem.data.demand_hash === item.hash
+        })
+      }
+      return []
+    },
     onSort (sort) {
-      console.log('onSort', sort)
-      this.sortList(sort.name, sort.type)
+      this.sort.name = sort.name
+      this.sort.type = sort.type
     },
     getList () {
       api.getMarket()
         .then((response) => {
-          console.log(response)
           if (response.data) {
             this.items = response.data
           }
@@ -71,22 +143,9 @@ export default {
     },
     shortAccount (input) {
       return input
-    },
-    sortList (name, type) {
-      this.items.sort((a, b) => {
-        if (a.data[name] < b.data[name]) {
-          return type === 'asc' ? -1 : 1
-        }
-        if (a.data[name] > b.data[name]) {
-          return type === 'asc' ? 1 : -1
-        }
-
-        return 0
-      })
     }
   },
   mounted () {
-    console.log('getting list')
     this.getList()
   }
 }
@@ -95,5 +154,9 @@ export default {
 <style>
 #list {
   padding: 15px;
+}
+
+tr.highlight {
+  background-color: #5998C5;
 }
 </style>
