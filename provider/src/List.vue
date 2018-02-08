@@ -98,7 +98,9 @@ export default {
       filtered.forEach(item => {
         item.isHighlighted = false
         this.matchedItems.forEach(matchItem => {
-          item.isHighlighted = (matchItem.data.offer_hash === item.hash || matchItem.data.demand_hash === item.hash)? true : false
+          if (item.hash === matchItem.data.demand_hash || item.hash === matchItem.data.offer_hash) {
+            item.isHighlighted = true
+          }
         })
       })
 
